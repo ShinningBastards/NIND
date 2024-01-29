@@ -1,1 +1,1 @@
-# NIND - NSA
+# NIND
