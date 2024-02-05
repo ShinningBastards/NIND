@@ -7,14 +7,12 @@
       shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
     - name: Install mysql
       apt:
-        name: "{{item}}"
+        name:
+          - mysql-server
+          - mysql-client
+          - python3-mysqldb
+          - libmysqlclient-dev
         state: present
-        update_cache: yes
-      loop:
-        - mysql-server
-        - mysql-client 
-        - python3-mysqldb
-        - libmysqlclient-dev
     - name: Start mysql
       service:
         name: mysql
@@ -27,6 +25,13 @@
         host: '%'
         priv: '*.*:ALL'
         state: present
+    - name: Ensure database is present
+      community.mysql.mysql_db:
+        name: "back"
+        state: present
+        login_user: "user"
+        login_password: "user"
+        login_host: "localhost"
     - name: Accept incoming
       lineinfile:
         path: /etc/mysql/mysql.conf.d/mysqld.cnf

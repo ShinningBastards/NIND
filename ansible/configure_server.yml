@@ -26,10 +26,20 @@
       command: npm install -g yarn
       environment:
         PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
-    - name: Launch front
-      shell: ./start.sh
+    - name: Install packages
+      shell: nohup yarn
       args:
-        chdir: /opt/front  # Exécutez la commande dans ce répertoire
+        chdir: /opt/front
+      environment:
+        PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
+    - name: Launch front
+      shell: nohup yarn start > /dev/null 2>&1 &
+      async: 10
+      poll: 0
+      args:
+        chdir: /opt/front
+      environment:
+        PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
     - name: Install PHP 7.1
       apt_repository:
         repo: ppa:ondrej/php
@@ -54,7 +64,30 @@
           - php7.1-curl
           - php7.1-xml
           - php7.1-bcmath
+          - composer
         state: present
+    - name: Install dependencies
+      shell: composer install
+      args:
+        chdir: /opt/back
+    - name: Install packages
+      shell: nohup yarn
+      args:
+        chdir: /opt/back
+      environment:
+        PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
+    - name: Migrate database
+      shell: php artisan migrate
+      args:
+        chdir: /opt/back
+    - name: Launch back
+      shell: nohup php artisan serve > /dev/null 2>&1 &
+      async: 10
+      poll: 0
+      args:
+        chdir: /opt/back
+      environment:
+        PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
     - name: Install Nginx
       apt:
         name: nginx
@@ -66,7 +99,7 @@
         enabled: yes
     - name: Download default
       get_url:
-        url: https://gist.githubusercontent.com/Musubi42/0de220f71a8394fa8d1ff4a7fbbf0758/raw/f10b2e34edee420e84ca2e6c9a541707c2a59291/nginx_site_available_front
+        url: https://gist.githubusercontent.com/Musubi42/0de220f71a8394fa8d1ff4a7fbbf0758/raw/631e3c73fffda6aabc8ff9f9989b7bdc91e02206/nginx_site_available_front
         dest: /etc/nginx/sites-available/default
         mode: "0775"
       notify: restart nginx
