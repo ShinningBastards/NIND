@@ -1,0 +1,39 @@
+---
+- name: Install MySQL 5.7
+  hosts: database
+  become: yes
+  tasks:
+    - name: Install mysql
+      apt:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      loop:
+        - mysql-server
+        - mysql-client 
+        - python3-mysqldb
+        - libmysqlclient-dev
+    - name: Start mysql
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+    - name: Create user
+      mysql_user:
+        name: user
+        password: user
+        host: '%'
+        priv: '*.*:ALL'
+        state: present
+    - name: Accept incoming
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address'
+        line: 'bind-address = 0.0.0.0'
+        backup: yes
+      notify: restart mysql
+  handlers:
+    - name: restart mysql
+      service:
+        name: mysql
+        state: restarted

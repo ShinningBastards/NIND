@@ -1,0 +1,71 @@
+- name: Configure server
+  hosts: server
+  become: yes
+  tasks:
+    - name: Download Node.js v10.24.1
+      get_url:
+        url: https://nodejs.org/dist/v10.24.1/node-v10.24.1-linux-x64.tar.gz
+        dest: /tmp/node-v10.24.1-linux-x64.tar.gz
+        mode: "0775"
+    - name: Create directory
+      file:
+        path: /usr/local/lib/nodejs
+        state: directory
+        mode: "0775"
+    - name: Extract archive
+      unarchive:
+        src: /tmp/node-v10.24.1-linux-x64.tar.gz
+        dest: /usr/local/lib/nodejs
+        remote_src: yes
+    - name: Add node to PATH
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH="/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:$PATH"'
+        insertafter: EOF
+    - name: Install yarn
+      command: npm install -g yarn
+      environment:
+        PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
+    - name: Install PHP 7.1
+      apt_repository:
+        repo: ppa:ondrej/php
+        state: present
+    - name: Update apt
+      apt:
+        update_cache: yes
+    - name: 
+      apt:
+        name:
+          - php7.1
+          - php7.1-cli
+          - php7.1-fpm
+          - php7.1-json
+          - php7.1-common
+          - php7.1-mysql
+          - php7.1-zip
+          - php7.1-gd
+          - php7.1-mbstring
+          - php7.1-curl
+          - php7.1-xml
+          - php7.1-bcmath
+        state: present
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+    - name: Download default
+      get_url:
+        url: https://gist.githubusercontent.com/Musubi42/0de220f71a8394fa8d1ff4a7fbbf0758/raw/f10b2e34edee420e84ca2e6c9a541707c2a59291/nginx_site_available_front
+        dest: /etc/nginx/sites-available/default
+        mode: "0775"
+      notify: restart nginx
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
