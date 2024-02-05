@@ -26,6 +26,10 @@
       command: npm install -g yarn
       environment:
         PATH: "/usr/local/lib/nodejs/node-v10.24.1-linux-x64/bin:{{ ansible_env.PATH }}"
+    - name: Launch front
+      shell: ./start.sh
+      args:
+        chdir: /opt/front  # Exécutez la commande dans ce répertoire
     - name: Install PHP 7.1
       apt_repository:
         repo: ppa:ondrej/php
@@ -33,7 +37,9 @@
     - name: Update apt
       apt:
         update_cache: yes
-    - name: 
+    - name: Wait for /var/lib/dpkg/lock-frontend to be released 
+      shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
+    - name: Install packages
       apt:
         name:
           - php7.1

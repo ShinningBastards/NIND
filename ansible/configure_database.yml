@@ -3,6 +3,8 @@
   hosts: database
   become: yes
   tasks:
+    - name: Wait for /var/lib/dpkg/lock-frontend to be released 
+      shell: while lsof /var/lib/dpkg/lock-frontend ; do sleep 10; done;
     - name: Install mysql
       apt:
         name: "{{item}}"
